@@ -1,0 +1,4 @@
+# Tells Netlify where the website and the server functions live.
+[build]
+  publish = "."
+  functions = "netlify/functions"

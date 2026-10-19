@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOIR &amp; BEAN — Specialty Coffee</title>
+<meta name="description" content="NOIR & BEAN: freshly roasted specialty coffee and pastries. Demo website.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<script>try{if(sessionStorage.getItem("nb-splash")&&!/[?&]splash/.test(location.search))document.documentElement.classList.add("no-splash")}catch(e){}</script>
+<link rel="preload" as="image" href="assets/images/cup-cut.webp">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="splash" id="splash" role="status" aria-live="polite" aria-label="Loading NOIR &amp; BEAN">
+  <div class="sp-amb" aria-hidden="true"></div><div class="sp-pho" aria-hidden="true"></div>
+  <div class="sp-top"><svg class="sp-leaf" viewBox="0 0 40 36" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1d9a6"/><stop offset="1" stop-color="#b8863f"/></linearGradient></defs><path d="M13 32C3 22 6 7 20 2c4 12 0 24-7 30z" fill="#d9b980"/><path d="M22 33c-3-10 3-21 16-24 0 12-6 21-16 24z" fill="#d9b980" opacity=".92"/><path d="M14 28C13 19 15 11 19 6M24 30c2-7 7-13 12-17" stroke="#3a2010" stroke-width="1" fill="none" opacity=".55"/></svg><div class="sp-brand">NOIR &amp; BEAN</div><p class="sp-tag">Coffee &middot; People &middot; Stories</p></div>
+  <div class="sp-ld" aria-hidden="true"><div class="sp-bar"><i id="spBar"></i></div><span>Brewing something special&hellip;</span></div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<radialGradient id="bg" cx=".3" cy=".24" r=".95"><stop offset="0" stop-color="#c08f63"/><stop offset=".3" stop-color="#7d4b2b"/><stop offset=".72" stop-color="#3a1f12"/><stop offset="1" stop-color="#150a05"/></radialGradient>
+<radialGradient id="bg2" cx=".3" cy=".24" r=".95"><stop offset="0" stop-color="#d2a572"/><stop offset=".3" stop-color="#97623a"/><stop offset=".72" stop-color="#52301c"/><stop offset="1" stop-color="#22110a"/></radialGradient>
+<linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<symbol id="bean" viewBox="0 0 20 28"><path d="M10 .9C15.6.9 19.4 6.6 19.4 14S15.6 27.1 10 27.1.6 21.4.6 14 4.4.9 10 .9z" fill="url(#bg)"/><path d="M10.8 2.2C6.6 7.6 13.8 10.6 9.6 15.2s2.600 7.600-.6 10.400" fill="none" stroke="#0d0502" stroke-width="2.200" stroke-linecap="round"/><path d="M12.100 2.600C8.200 7.800 15.200 10.800 11 15.400s2.400 7.400-.4 9.800" fill="none" stroke="#d9a877" stroke-opacity=".38" stroke-width=".7" stroke-linecap="round"/><ellipse cx="6" cy="7.500" rx="2" ry="4.800" fill="url(#sheen)" transform="rotate(14 6 7.500)"/><ellipse cx="5.300" cy="4.800" rx=".8" ry="1.300" fill="#fff" opacity=".55"/><path d="M10 .9C15.6.9 19.4 6.6 19.4 14S15.6 27.1 10 27.1.6 21.4.6 14 4.4.9 10 .9z" fill="none" stroke="#0a0402" stroke-opacity=".6" stroke-width=".6"/></symbol>
+<symbol id="bean2" viewBox="0 0 20 28"><path d="M10 .9C15.6.9 19.4 6.6 19.4 14S15.6 27.1 10 27.1.6 21.4.6 14 4.4.9 10 .9z" fill="url(#bg2)"/><path d="M9.600 2.200C13.800 7.600 6.400 10.600 10.600 15.200s-2.600 7.600.6 10.400" fill="none" stroke="#1b0c05" stroke-width="2" stroke-linecap="round"/><path d="M8.400 2.600C12.200 7.800 5.200 10.800 9.400 15.400s-2.400 7.400.4 9.800" fill="none" stroke="#f0cfa0" stroke-opacity=".4" stroke-width=".7" stroke-linecap="round"/><ellipse cx="14" cy="8" rx="1.900" ry="4.400" fill="url(#sheen)" transform="rotate(-14 14 8)"/><ellipse cx="14.600" cy="5" rx=".8" ry="1.300" fill="#fff" opacity=".5"/><path d="M10 .9C15.6.9 19.4 6.6 19.4 14S15.6 27.1 10 27.1.6 21.4.6 14 4.4.9 10 .9z" fill="none" stroke="#0a0402" stroke-opacity=".55" stroke-width=".6"/></symbol>
+</defs></svg>
+<div class="progress" id="progress"></div>
+<div class="announce">Autumn menu is here — free delivery on orders over ₹600 (demo site)</div>
+<header class="nav" id="nav">
+  <a href="#home" class="logo">NOIR <i>&amp;</i> BEAN</a>
+  <nav id="menuNav" aria-label="Main">
+    <a href="#home">Home</a><a href="#menu">Menu</a><a href="#experience">Experience</a><a href="#rewards">Rewards</a><a href="#track">Track</a><a href="#reviews">Reviews</a><a href="#contact">Contact</a>
+  </nav>
+  <div class="tools">
+    <button id="searchBtn" aria-label="Search menu"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button id="accountBtn" aria-label="Account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    <button id="cartBtn" aria-label="Open cart"><svg viewBox="0 0 24 24"><path d="M5 7h14l-1.5 12h-11z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="badge" id="badge">0</span></button>
+    <button id="burger" class="burger" aria-label="Menu" aria-expanded="false" aria-controls="menuNav"><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+<section id="home" class="hero3 dark" aria-label="Welcome">
+  <img class="h3-ph" src="assets/images/hero-barista.jpg" width="631" height="715" alt="A barista pouring steamed milk into a speckled ceramic cup, making latte art">
+  <img class="h3-pile" src="assets/images/pile.webp" width="1500" height="290" alt="" aria-hidden="true">
+  <div class="h3-copy">
+    <div class="h3-eb">Specialty Coffee</div>
+    <h1>Good Coffee <span>Brighter</span> Days</h1>
+    <p>Premium coffee, thoughtfully sourced, for moments that matter.</p>
+    <div class="h3-cta"><a class="btn gold" href="#menu">Shop Coffee <span aria-hidden="true">&rarr;</span></a><a class="btn ghost" href="#experience">Explore More</a></div>
+  </div>
+  <div class="h3-fr"><div class="h3-ft"><svg viewBox="0 0 24 24" fill="none" stroke="#d9b980" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11M12 11C12 6 8 4 4 4c0 4 3 7 8 7zM12 14c0-4 3-6 8-6 0 4-3 6-8 6z"/></svg><span>100% Organic<br>Beans</span></div><div class="h3-ft"><svg viewBox="0 0 24 24" fill="none" stroke="#d9b980" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2zM13 10h5l3 3v3h-8zM6 19a1.600 1.600 0 1 0 0-.1M17 19a1.600 1.600 0 1 0 0-.1"/></svg><span>Freshly Roasted<br>&amp; Delivered</span></div><div class="h3-ft"><svg viewBox="0 0 24 24" fill="none" stroke="#d9b980" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4zM16 10h2a2 2 0 0 1 0 4h-2M8 3v3M12 3v3"/></svg><span>Rich Aroma<br>Real Taste</span></div><div class="h3-ft"><svg viewBox="0 0 24 24" fill="none" stroke="#d9b980" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9M12 12c-4 0-6-3-6-6 4 0 6 2 6 6zM12 14c0-3 2-5 6-5 0 3-2 5-6 5zM8 21h8"/></svg><span>Sustainably<br>Sourced</span></div></div>
+  <a class="h3-sc" href="#menu" aria-label="Scroll to menu"><i aria-hidden="true">&darr;</i>SCROLL</a>
+</section>
+
+<div class="marquee" aria-hidden="true"><div id="mq"><span>Small-batch roasted</span><span>Single-origin beans</span><span>Pulled to order</span><span>Baked every morning</span><span>Slow mornings welcome</span></div></div>
+
+<section id="menu" class="sec">
+  <div class="head"><h2>The Collection</h2><p>Search, filter and sort — every item adds straight to your cart.</p></div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search by name, category or price…" aria-label="Search products">
+    <select id="sort" aria-label="Sort products"><option value="pop">Most popular</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="az">Name: A to Z</option></select>
+    <button class="btn line" id="clear">Clear all filters</button>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Categories"></div>
+  <div class="grid" id="grid" aria-live="polite"></div>
+</section>
+
+<section class="sec dark best" id="bestsellers">
+  <div class="head"><h2>Bestsellers</h2><div class="arrows"><button id="bPrev" aria-label="Previous bestseller">‹</button><button id="bNext" aria-label="Next bestseller">›</button></div></div>
+  <div class="spot" id="spot" role="region" aria-roledescription="carousel" aria-label="Bestsellers"></div>
+</section>
+
+<section id="experience" class="sec dark craft">
+  <div class="head"><h2>From Bean to Cup</h2><p>Four stages, one standard.</p></div>
+  <div class="craft-wrap">
+    <ol class="steps" id="steps"></ol>
+    <div class="craft-img"><img id="craftImg" width="800" height="600" loading="lazy" alt="Coffee preparation stage"></div>
+  </div>
+</section>
+
+<section class="offer">
+  <span class="bean b1"></span><span class="bean b3"></span>
+  <div class="offer-img rv"><img loading="lazy" width="800" height="600" alt="Seasonal latte with cinnamon" src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=900&q=75"></div>
+  <div class="offer-txt rv"><h2>A Little More Warmth in Every Cup.</h2><p>Our autumn collection pairs cinnamon, caramel and toasted hazelnut with single-origin espresso. Use code WARM10 at demo checkout for 10% off.</p><button class="btn gold" id="offerBtn">Explore the collection</button></div>
+</section>
+
+<section id="rewards" class="sec dark rewards"><span class="bean b1"></span><span class="bean b3"></span><span class="bean b2"></span>
+  <div class="head"><h2>NB Rewards</h2><p>Demo loyalty program. Progress is saved in this browser only.</p></div>
+  <div class="rw-grid">
+    <div class="rw-card rv"><small>Points</small><b id="pts">0</b><div class="bar-p"><i id="ptsBar"></i></div><p id="ptsTxt" class="small"></p>
+      <button class="btn gold" id="redeemPts">Redeem 100 pts for ₹50 off</button><button class="btn ghost" id="demoBtn">Add 50 demo points and 1 stamp</button></div>
+    <div class="rw-card rv"><small>Stamp card</small><div class="stamps" id="stamps"></div><p class="small">Each drink in an order earns a stamp. Six stamps give a free Signature Espresso (₹180 off).</p><button class="btn gold" id="redeemStamps">Redeem free drink</button></div>
+  </div>
+  <p id="couponTxt" class="small" aria-live="polite"></p>
+</section>
+
+<section id="track" class="sec">
+  <div class="head"><h2>Track your order</h2><p>Demo statuses advance every few seconds.</p></div>
+  <form id="trackF" class="bar"><input id="trackIn" placeholder="Order ID, e.g. NB1234 (blank = latest)" aria-label="Order ID"><button class="btn gold" type="submit">Track</button></form>
+  <div id="trackOut"></div>
+</section>
+
+<section id="reviews" class="sec">
+  <div class="head"><h2>Reviews</h2><p>Illustrative demo reviews plus any you add. Saved in this browser only.</p></div>
+  <div class="rv-wrap"><div class="rv-sum" id="rvSum"></div><div class="rv-list" id="rvList"></div></div>
+  <form id="rvForm" class="rv-form" novalidate><h3>Leave a review</h3>
+    <input id="rvName" placeholder="Your name" aria-label="Your name"><div class="starin" id="starIn" role="group" aria-label="Rating"></div>
+    <textarea id="rvText" rows="3" placeholder="How was your visit?" aria-label="Your review"></textarea><span class="err" id="rvErr" role="alert"></span>
+    <button class="btn gold" type="submit">Submit review</button></form>
+</section>
+
+<section class="sec gal-sec">
+  <div class="head"><h2>The Space</h2></div>
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<section class="news dark">
+  <h2>Slow mornings, in your inbox</h2>
+  <form id="newsForm" novalidate><label for="email" class="sr">Email address</label><input id="email" type="email" placeholder="you@example.com" aria-describedby="emailErr"><button class="btn gold" type="submit" id="subBtn">Subscribe</button></form>
+  <p id="emailErr" class="err" role="alert"></p><p class="small">We only use your email for café news. Payments are not live yet (demo).</p>
+</section>
+
+<section id="contact" class="sec contact">
+  <div><h2>Visit us</h2><p><b>Demo address:</b> 12 Roastery Lane, Jubilee Hills, Hyderabad (placeholder)</p>
+  <p><b>Hours:</b> Mon–Fri 7am–10pm · Sat–Sun 8am–11pm</p><p><b>Email:</b> hello@noirandbean.example<br><b>Phone:</b> +91 00000 00000</p>
+  <a class="btn gold" id="dirBtn" href="https://www.google.com/maps/search/?api=1&query=coffee+shop+Hyderabad" target="_blank" rel="noopener">Get directions</a></div>
+  <iframe title="Map showing the café location (demo)" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=78.39%2C17.40%2C78.45%2C17.44&amp;layer=mapnik"></iframe>
+</section>
+</main>
+
+<footer class="dark foot">
+  <div class="brand"><a href="#home" class="logo">NOIR <i>&amp;</i> BEAN</a><p>Specialty coffee, roasted slowly and poured with care.</p><span class="pill open-now"></span></div>
+  <div><h3>Explore</h3><a href="#menu">Menu</a><a href="#rewards">Rewards</a><a href="#track">Track order</a><a href="#contact">Contact</a></div>
+  <div><h3>Categories</h3><a href="#menu" data-cat="Hot Coffee">Hot Coffee</a><a href="#menu" data-cat="Cold Coffee">Cold Coffee</a><a href="#menu" data-cat="Tea">Tea</a><a href="#menu" data-cat="Bakery">Bakery</a></div>
+  <div><h3>Follow</h3><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a><a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a><a href="#" data-doc="Privacy policy">Privacy policy</a><a href="#" data-doc="Terms">Terms</a></div>
+  <div><h3>Visit</h3><p>12 Roastery Lane, Jubilee Hills<br>Hyderabad (demo address)</p><p>Mon–Fri 7am–10pm<br>Sat–Sun 8am–11pm</p><a href="#home" id="toTop2">Join the newsletter</a></div>
+  <p class="mark" aria-hidden="true">NOIR &amp; BEAN</p>
+  <p class="copy">© <span id="year"></span> NOIR &amp; BEAN. Demo website.</p>
+</footer>
+<button class="top" id="top" aria-label="Back to top">↑</button>
+
+<div class="shade" id="shade"></div>
+<aside class="drawer" id="drawer" aria-label="Shopping cart" aria-hidden="true">
+  <div class="d-head"><h2>Your cart</h2><button id="cartClose" aria-label="Close cart">×</button></div>
+  <div class="d-body" id="cartBody"></div>
+  <div class="d-foot" id="cartFoot"></div>
+</aside>
+<dialog id="modal"><button class="x" id="mClose" aria-label="Close">×</button><div id="mBody"></div></dialog>
+<dialog id="lightbox"><button class="x" id="lClose" aria-label="Close">×</button><img id="lImg" alt=""></dialog>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="js/script.js"></script>
+</body>
+</html>
