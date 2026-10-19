@@ -46,3 +46,12 @@ The Function holds the secret API key on the server, so nobody can steal it from
 - The function already rejects bad input, blocks HTML injection, always sends to the fixed receiver,
   and limits repeated requests. It can't stop a determined attacker; add a CAPTCHA later if spam appears.
 - Never put the API key in `script.js`, `index.html` or GitHub. Rotate it in Resend if it ever leaks.
+
+## Checkout, payment and bill (sample)
+
+- **Phone:** only digits are accepted, with a country dropdown (list is `COUNTRIES` in `js/script.js`; add a line to add a country).
+- **Payment:** Card (test card `4242 4242 4242 4242`), UPI QR, and Cash. Nothing is charged. Card numbers are never saved or emailed.
+- **UPI QR:** change `UPI_ID` at the top of the checkout section in `js/script.js` to your real UPI ID. A QR alone cannot confirm that money arrived; for real payments use a gateway (Razorpay, Stripe, etc.).
+- **Bill:** shown after payment, can be printed or saved as PDF, and reopened later from *Track → View bill*.
+- **Owner email:** the look of every email is in `wrap()` in `netlify/functions/send-mail.js`; the order email body is the `type === 'order'` block in `build()`.
+- Push these changes to GitHub so Netlify redeploys (the function changed too).

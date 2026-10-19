@@ -30,7 +30,7 @@
 <header class="nav" id="nav">
   <a href="#home" class="logo">NOIR <i>&amp;</i> BEAN</a>
   <nav id="menuNav" aria-label="Main">
-    <a href="#home">Home</a><a href="#menu">Menu</a><a href="#experience">Experience</a><a href="#rewards">Rewards</a><a href="#track">Track</a><a href="#reviews">Reviews</a><a href="#contact">Contact</a>
+    <a href="#home">Home</a><a href="#menu">Menu</a><a href="#reviews">Reviews</a><a href="#experience">Experience</a><a href="#rewards">Rewards</a><a href="#track">Track</a><a href="#contact">Contact</a>
   </nav>
   <div class="tools">
     <button id="searchBtn" aria-label="Search menu"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
@@ -41,6 +41,7 @@
 </header>
 
 <main>
+
 <section id="home" class="hero3 dark" aria-label="Welcome">
   <img class="h3-ph" src="assets/images/hero-barista.jpg" width="631" height="715" alt="A barista pouring steamed milk into a speckled ceramic cup, making latte art">
   <img class="h3-pile" src="assets/images/pile.webp" width="1500" height="290" alt="" aria-hidden="true">
@@ -72,6 +73,21 @@
   <div class="spot" id="spot" role="region" aria-roledescription="carousel" aria-label="Bestsellers"></div>
 </section>
 
+<section class="offer">
+  <span class="bean b1"></span><span class="bean b3"></span>
+  <div class="offer-img rv"><img loading="lazy" width="800" height="600" alt="Seasonal latte with cinnamon" src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=900&q=75"></div>
+  <div class="offer-txt rv"><h2>A Little More Warmth in Every Cup.</h2><p>Our autumn collection pairs cinnamon, caramel and toasted hazelnut with single-origin espresso. Use code WARM10 at demo checkout for 10% off.</p><button class="btn gold" id="offerBtn">Explore the collection</button></div>
+</section>
+
+<section id="reviews" class="sec">
+  <div class="head"><h2>Reviews</h2><p>Illustrative demo reviews plus any you add. Saved in this browser only.</p></div>
+  <div class="rv-wrap"><div class="rv-sum" id="rvSum"></div><div class="rv-list" id="rvList"></div></div>
+  <form id="rvForm" class="rv-form" novalidate><h3>Leave a review</h3>
+    <input id="rvName" placeholder="Your name" aria-label="Your name"><div class="starin" id="starIn" role="group" aria-label="Rating"></div>
+    <textarea id="rvText" rows="3" placeholder="How was your visit?" aria-label="Your review"></textarea><span class="err" id="rvErr" role="alert"></span>
+    <button class="btn gold" type="submit">Submit review</button></form>
+</section>
+
 <section id="experience" class="sec dark craft">
   <div class="head"><h2>From Bean to Cup</h2><p>Four stages, one standard.</p></div>
   <div class="craft-wrap">
@@ -80,10 +96,9 @@
   </div>
 </section>
 
-<section class="offer">
-  <span class="bean b1"></span><span class="bean b3"></span>
-  <div class="offer-img rv"><img loading="lazy" width="800" height="600" alt="Seasonal latte with cinnamon" src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=900&q=75"></div>
-  <div class="offer-txt rv"><h2>A Little More Warmth in Every Cup.</h2><p>Our autumn collection pairs cinnamon, caramel and toasted hazelnut with single-origin espresso. Use code WARM10 at demo checkout for 10% off.</p><button class="btn gold" id="offerBtn">Explore the collection</button></div>
+<section class="sec gal-sec">
+  <div class="head"><h2>The Space</h2></div>
+  <div class="gallery" id="gallery"></div>
 </section>
 
 <section id="rewards" class="sec dark rewards"><span class="bean b1"></span><span class="bean b3"></span><span class="bean b2"></span>
@@ -100,20 +115,6 @@
   <div class="head"><h2>Track your order</h2><p>Demo statuses advance every few seconds.</p></div>
   <form id="trackF" class="bar"><input id="trackIn" placeholder="Order ID, e.g. NB1234 (blank = latest)" aria-label="Order ID"><button class="btn gold" type="submit">Track</button></form>
   <div id="trackOut"></div>
-</section>
-
-<section id="reviews" class="sec">
-  <div class="head"><h2>Reviews</h2><p>Illustrative demo reviews plus any you add. Saved in this browser only.</p></div>
-  <div class="rv-wrap"><div class="rv-sum" id="rvSum"></div><div class="rv-list" id="rvList"></div></div>
-  <form id="rvForm" class="rv-form" novalidate><h3>Leave a review</h3>
-    <input id="rvName" placeholder="Your name" aria-label="Your name"><div class="starin" id="starIn" role="group" aria-label="Rating"></div>
-    <textarea id="rvText" rows="3" placeholder="How was your visit?" aria-label="Your review"></textarea><span class="err" id="rvErr" role="alert"></span>
-    <button class="btn gold" type="submit">Submit review</button></form>
-</section>
-
-<section class="sec gal-sec">
-  <div class="head"><h2>The Space</h2></div>
-  <div class="gallery" id="gallery"></div>
 </section>
 
 <section class="news dark">
@@ -150,6 +151,7 @@
 <dialog id="modal"><button class="x" id="mClose" aria-label="Close">×</button><div id="mBody"></div></dialog>
 <dialog id="lightbox"><button class="x" id="lClose" aria-label="Close">×</button><img id="lImg" alt=""></dialog>
 <div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="js/qrcode.js"></script>
 <script src="js/script.js"></script>
 </body>
 </html>
