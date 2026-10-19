@@ -166,31 +166,128 @@ $('#cartFoot').addEventListener('submit', e => { e.preventDefault(); const v = $
 /* ---------- Checkout, orders, rewards ---------- */
 let trackId = '';
 const saveRewards = r => { store.set('nb-rewards', r); renderRewards(); renderCart(); };
-function openCheckout() {
-  setDrawer(false);
-  openModal(`<form class="co" id="coForm" novalidate><h3 style="font-size:1.5rem">Checkout</h3><p class="demo"><b>Demo checkout.</b> No real payment is taken. The café team is emailed your order details.</p>
-  <div class="radios" role="radiogroup" aria-label="Order type"><label><input type="radio" name="mode" value="delivery" checked> Delivery</label><label><input type="radio" name="mode" value="pickup"> Pickup</label></div>
-  ${[['name', 'Full name', 'text'], ['email', 'Email', 'email'], ['phone', 'Phone (10 digits)', 'tel']].map(([id, l, ty]) => `<label>${l}<input name="${id}" type="${ty}"><span class="err" data-for="${id}"></span></label>`).join('')}
-  <label id="addrL">Delivery address<textarea name="addr" rows="2"></textarea><span class="err" data-for="addr"></span></label>
-  <div class="radios" role="radiogroup" aria-label="Payment method (demo)"><label><input type="radio" name="pay" value="Card" checked> Card</label><label><input type="radio" name="pay" value="UPI"> UPI</label><label><input type="radio" name="pay" value="Cash"> Pay at counter</label></div>
-  <p class="demo" id="coTot"></p><button class="btn gold" type="submit">Place demo order</button></form>`);
-  const f = $('#coForm'), el = n => f.elements[n], mode = () => f.querySelector('[name=mode]:checked').value;
-  const upd = () => { $('#addrL').style.display = mode() === 'pickup' ? 'none' : ''; $('#coTot').innerHTML = `Total (demo): <b>${rupee(totals(mode()).total)}</b>`; };
-  f.addEventListener('change', upd); upd();
-  f.onsubmit = e => { e.preventDefault(); const v = n => el(n).value.trim(), m = mode();
-    const rules = {name:v('name').length > 1, email:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email')), phone:/^\d{10}$/.test(v('phone')), addr:m === 'pickup' || v('addr').length > 5};
-    const msg = {name:'Enter your full name.', email:'Enter a valid email address.', phone:'Enter a 10-digit phone number.', addr:'Enter your delivery address.'};
-    let ok = true; for (const k in rules) { $(`[data-for=${k}]`, f).textContent = rules[k] ? '' : msg[k]; ok = ok && rules[k]; }
-    if (!ok) return;
-    const t = totals(m), drinks = cart.filter(i => PRODUCTS.find(p => p.id === i.id).sizes).reduce((s, i) => s + i.qty, 0);
-    const order = {id:'NB' + Math.floor(1000 + Math.random() * 9000), ts:Date.now(), mode:m, pay:f.querySelector('[name=pay]:checked').value, total:t.total, items:cart.map(i => ({n:PRODUCTS.find(p => p.id === i.id).name, q:i.qty}))};
-    store.set('nb-orders', [order, ...store.get('nb-orders', [])].slice(0, 10));
-    sendMail('order', {order, customer:{name:v('name'), email:v('email'), phone:v('phone'), addr:m === 'pickup' ? '' : v('addr')}});
-    const r = rewards(); saveRewards({points:r.points + Math.floor(t.sub / 10), stamps:Math.min(12, r.stamps + drinks), coupon:Math.max(0, r.coupon - t.disc)});
-    cart = []; promo = ''; store.set('nb-promo', ''); saveCart(); renderTrack(order.id);
-    $('#mBody').innerHTML = `<div style="padding:2.2rem;text-align:center"><h3 style="font-size:1.6rem">Demo order placed</h3><p style="margin:.8rem 0">Order <b>${order.id}</b> for ${esc(v('name'))}. You earned ${Math.floor(t.sub / 10)} demo points. No payment was processed.</p><button class="btn gold" id="goTrack">Track order</button></div>`;
-    $('#goTrack').onclick = () => { modal.close(); $('#track').scrollIntoView(); };
+/* ---------- Checkout: 1 Details → 2 Payment → 3 Bill ---------- */
+const UPI_ID = 'noirbean@upi';   // SAMPLE UPI ID. Replace with your real UPI ID before going live.
+const SHOP = 'Noir & Bean';
+/* [country, dial code, min digits, max digits] */
+const COUNTRIES = [['India', '+91', 10, 10], ['United States', '+1', 10, 10], ['Canada', '+1', 10, 10], ['United Kingdom', '+44', 10, 10], ['United Arab Emirates', '+971', 9, 9], ['Saudi Arabia', '+966', 9, 9], ['Qatar', '+974', 8, 8], ['Singapore', '+65', 8, 8], ['Malaysia', '+60', 9, 10], ['Australia', '+61', 9, 9], ['Zambia', '+260', 9, 9], ['Sri Lanka', '+94', 9, 9], ['Nepal', '+977', 10, 10], ['Bangladesh', '+880', 10, 10], ['Germany', '+49', 10, 11], ['France', '+33', 9, 9]];
+const digits = s => String(s || '').replace(/\D/g, '');
+const luhn = n => { let s = 0, alt = false; for (let i = n.length - 1; i >= 0; i--) { let d = +n[i]; if (alt) { d *= 2; if (d > 9) d -= 9; } s += d; alt = !alt; } return n.length > 0 && s % 10 === 0; };
+const setModal = html => { $('#mBody').innerHTML = html; if (!modal.open) modal.showModal(); };
+const fmtDate = ts => new Date(ts).toLocaleString('en-IN', {dateStyle:'medium', timeStyle:'short'});
+const billLines = () => cart.map(i => { const p = PRODUCTS.find(x => x.id === i.id); return {n:p.name, q:i.qty, p:unit(p, i.size, i.opts), size:i.size || '', note:optText(i.opts)}; });
+const stepBar = n => `<div class="co-steps">${['Details', 'Payment', 'Bill'].map((s, k) => `<span class="${k + 1 === n ? 'on' : k + 1 < n ? 'done' : ''}">${k + 1}. ${s}</span>`).join('')}</div>`;
+
+/* The order summary / bill table (used on both checkout steps, the bill, and the print page) */
+function summaryHtml(lines, t, title = 'Order summary') {
+  const r = (l, v, cls = '') => `<div${cls ? ` class="${cls}"` : ''}><span>${l}</span><span>${v}</span></div>`;
+  return `<div class="osum"><h4>${title}</h4><ul>${lines.map(l => `<li><span>${l.q}× ${esc(l.n)}${l.size ? ' (' + l.size + ')' : ''}<small>${l.q > 1 ? rupee(l.p) + ' each' : ''}${l.note ? (l.q > 1 ? ' · ' : '') + esc(l.note) : ''}</small></span><b>${rupee(l.p * l.q)}</b></li>`).join('')}</ul>
+  <div class="rows">${r('Subtotal', rupee(t.sub))}${t.pr ? r('Promo WARM10', '−' + rupee(t.pr)) : ''}${t.disc ? r('Rewards', '−' + rupee(t.disc)) : ''}${r('GST (5%)', rupee(t.tax))}${r('Delivery', t.ship ? rupee(t.ship) : 'Free')}${r('Total', rupee(t.total), 'tot')}</div></div>`;
+}
+
+let CO = null;   // the checkout form values, kept so "Back" does not lose anything
+function openCheckout() { setDrawer(false); CO = {mode:'delivery', name:'', email:'', ci:0, phone:'', addr:'', pay:'Card', last4:''}; coDetails(); }
+
+/* ----- Step 1: details ----- */
+function coDetails() {
+  setModal(`<form class="co" id="coForm" novalidate>${stepBar(1)}<h3 style="font-size:1.5rem">Your details</h3><p class="demo"><b>Sample checkout.</b> No real money is taken. The café team is emailed your order.</p>
+  <div class="radios" role="radiogroup" aria-label="Order type"><label><input type="radio" name="mode" value="delivery"> Delivery</label><label><input type="radio" name="mode" value="pickup"> Pickup</label></div>
+  <label>Full name<input name="name" autocomplete="name"><span class="err" data-for="name"></span></label>
+  <label>Email<input name="email" type="email" autocomplete="email"><span class="err" data-for="email"></span></label>
+  <div><span class="lbl">Phone number</span><div class="phone"><select name="cc" aria-label="Country code">${COUNTRIES.map(([n, c], k) => `<option value="${k}">${n} (${c})</option>`).join('')}</select><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" aria-label="Phone number" aria-describedby="phHint"></div><span class="err" data-for="phone"></span><span class="hint" id="phHint"></span></div>
+  <label id="addrL">Delivery address<textarea name="addr" rows="2" autocomplete="street-address"></textarea><span class="err" data-for="addr"></span></label>
+  <div id="coSum"></div><button class="btn gold" type="submit">Continue to payment</button></form>`);
+  const f = $('#coForm'), el = n => f.elements[n], mode = () => f.querySelector('[name=mode]:checked').value, cc = () => COUNTRIES[+el('cc').value];
+  const err = (k, m) => { $(`[data-for=${k}]`, f).textContent = m || ''; el(k).setAttribute('aria-invalid', !!m); };
+  const phoneMsg = () => { const [n, c, lo, hi] = cc(); return `Enter ${lo === hi ? 'a ' + lo + '-digit' : lo + '–' + hi + ' digit'} phone number for ${n} (${c}).`; };
+  const fit = () => { const [, c, lo, hi] = cc(), r = lo === hi ? lo : lo + '–' + hi; el('phone').placeholder = r + ' digits'; $('#phHint').textContent = `Numbers only · ${r} digits · country code ${c}`; };
+  const upd = () => { $('#addrL').style.display = mode() === 'pickup' ? 'none' : ''; $('#coSum').innerHTML = summaryHtml(billLines(), totals(mode())); };
+  /* Phone box: only digits are accepted, and never more than the country allows */
+  el('phone').addEventListener('input', () => {
+    const [n, c, , hi] = cc(), raw = el('phone').value, cd = digits(c); let d = digits(raw), stripped = false;
+    if (/^\s*\+/.test(raw) && d.startsWith(cd) && d.length > hi) { d = d.slice(cd.length); stripped = true; }   // pasted "+91 98765…"
+    const tooLong = d.length > hi; d = d.slice(0, hi); if (el('phone').value !== d) el('phone').value = d;
+    err('phone', stripped ? '' : raw !== digits(raw) ? 'Only numbers are allowed. Letters and symbols were removed.' : tooLong ? `${n} numbers have at most ${hi} digits.` : '');
+  });
+  el('phone').addEventListener('blur', () => { const d = el('phone').value; if (d && d.length < cc()[2]) err('phone', phoneMsg()); });
+  el('cc').addEventListener('change', () => { fit(); el('phone').value = digits(el('phone').value).slice(0, cc()[3]); err('phone', ''); });
+  f.addEventListener('change', e => { if (e.target.name === 'mode') upd(); });
+  el('name').value = CO.name; el('email').value = CO.email; el('cc').value = CO.ci; el('phone').value = CO.phone; el('addr').value = CO.addr; f.querySelector(`[name=mode][value=${CO.mode}]`).checked = true; fit(); upd();
+  f.onsubmit = e => { e.preventDefault(); const v = n => el(n).value.trim(), [, , lo, hi] = cc(), m = mode(), ph = digits(v('phone'));
+    const rules = {name:v('name').length > 1, email:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email')), phone:ph.length >= lo && ph.length <= hi, addr:m === 'pickup' || v('addr').length > 5};
+    const msg = {name:'Enter your full name.', email:'Enter a valid email address.', phone:phoneMsg(), addr:'Enter your delivery address.'};
+    let first = null; for (const k in rules) { err(k, rules[k] ? '' : msg[k]); if (!rules[k] && !first) first = k; }
+    if (first) { el(first).focus(); return; }
+    Object.assign(CO, {mode:m, name:v('name'), email:v('email'), ci:+el('cc').value, phone:ph, addr:m === 'pickup' ? '' : v('addr')}); coPay();
   };
+}
+
+/* ----- Step 2: payment (Card / UPI QR / Cash). SAMPLE ONLY: nothing is charged. ----- */
+function coPay() {
+  const t = totals(CO.mode), cash = CO.mode === 'pickup' ? 'Pay at counter' : 'Cash on delivery';
+  setModal(`<form class="co" id="payForm" novalidate>${stepBar(2)}<h3 style="font-size:1.5rem">Payment</h3><p class="demo"><b>Sample payment.</b> Nothing is charged. This only shows how paying would work.</p>
+  <div class="paytabs" role="group" aria-label="Payment method">${[['Card', 'Card'], ['UPI', 'UPI / QR'], ['Cash', cash]].map(([v, l]) => `<button type="button" data-p="${v}">${l}</button>`).join('')}</div>
+  <div id="payPane"></div>${summaryHtml(billLines(), t)}
+  <div class="co-act"><button type="button" class="btn line" id="coBack">← Back</button><button class="btn gold" type="submit" id="payBtn"></button></div></form>`);
+  const f = $('#payForm'), btn = $('#payBtn'); let busy = false;
+  const perr = (k, m) => { $(`[data-for=${k}]`, f).textContent = m || ''; f.elements[k].setAttribute('aria-invalid', !!m); };
+  const pane = () => {
+    $$('.paytabs button', f).forEach(b => b.setAttribute('aria-pressed', b.dataset.p === CO.pay));
+    btn.textContent = CO.pay === 'Cash' ? 'Place order' : CO.pay === 'UPI' ? `I've paid ${rupee(t.total)}` : `Pay ${rupee(t.total)}`;
+    $('#payPane').innerHTML = CO.pay === 'Card' ? `<div class="paybox">
+      <label>Card number<input name="cn" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="23"><span class="err" data-for="cn"></span></label>
+      <label>Name on card<input name="cname" autocomplete="cc-name"><span class="err" data-for="cname"></span></label>
+      <div class="row2"><label>Expiry (MM/YY)<input name="cex" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5"><span class="err" data-for="cex"></span></label><label>CVV<input name="cvv" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="•••" maxlength="4"><span class="err" data-for="cvv"></span></label></div>
+      <p class="hint">Sample card: 4242 4242 4242 4242, any future date, any 3 digits. Card details stay in this window and are never saved or emailed.</p></div>`
+      : CO.pay === 'UPI' ? `<div class="paybox upi"><div class="qr" id="qr" role="img" aria-label="UPI payment QR code"></div><div><p><b>Scan to pay ${rupee(t.total)}</b></p><p class="small2">Open GPay, PhonePe, Paytm or any UPI app and scan this code.</p><p class="small2">UPI ID: <b>${UPI_ID}</b></p><p class="demo">Sample QR. Replace the UPI ID in script.js to receive real money. After paying, tap the button below.</p></div></div>`
+      : `<div class="paybox"><p>Pay <b>${rupee(t.total)}</b> in cash ${CO.mode === 'pickup' ? 'at the counter when you collect your order' : 'to the rider when your order arrives'}. No online payment is needed.</p></div>`;
+    if (CO.pay === 'UPI') { const link = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(SHOP)}&am=${t.total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Order at ' + SHOP)}`;
+      try { const q = qrcode(0, 'M'); q.addData(link); q.make(); $('#qr').innerHTML = q.createSvgTag({cellSize:4, margin:0, scalable:true}); } catch { $('#qr').textContent = 'QR unavailable. Pay to ' + UPI_ID; } }
+    if (CO.pay === 'Card') { const E = f.elements;
+      E.cn.oninput = () => { E.cn.value = digits(E.cn.value).slice(0, 19).replace(/(.{4})/g, '$1 ').trim(); };
+      E.cex.oninput = () => { const d = digits(E.cex.value).slice(0, 4); E.cex.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; };
+      E.cvv.oninput = () => { E.cvv.value = digits(E.cvv.value).slice(0, 4); }; }
+  };
+  const cardOk = () => { const E = f.elements, n = digits(E.cn.value), [mm, yy] = E.cex.value.split('/'), now = new Date(), y = 2000 + (+yy || 0);
+    const rules = {cn:n.length >= 13 && luhn(n), cname:E.cname.value.trim().length > 1, cex:/^\d\d\/\d\d$/.test(E.cex.value) && +mm >= 1 && +mm <= 12 && (y > now.getFullYear() || (y === now.getFullYear() && +mm >= now.getMonth() + 1)), cvv:/^\d{3,4}$/.test(E.cvv.value)};
+    const msg = {cn:'Enter a valid card number (try 4242 4242 4242 4242).', cname:'Enter the name on the card.', cex:'Enter a valid future expiry, like 08/29.', cvv:'Enter the 3 or 4 digit security code.'};
+    let first = null; for (const k in rules) { perr(k, rules[k] ? '' : msg[k]); if (!rules[k] && !first) first = k; }
+    if (first) { E[first].focus(); return false; } CO.last4 = n.slice(-4); return true; };
+  f.querySelector('.paytabs').onclick = e => { const b = e.target.closest('[data-p]'); if (b && !busy) { CO.pay = b.dataset.p; pane(); } };
+  $('#coBack').onclick = () => { if (!busy) coDetails(); };
+  f.onsubmit = e => { e.preventDefault(); if (busy || (CO.pay === 'Card' && !cardOk())) return;
+    busy = true; btn.disabled = true; btn.innerHTML = `<span class="spin"></span> ${CO.pay === 'Cash' ? 'Placing order…' : CO.pay === 'UPI' ? 'Confirming payment…' : 'Processing…'}`;
+    setTimeout(() => { if (modal.open) placeOrder(); }, CO.pay === 'Cash' ? 600 : 1600); };
+  pane();
+}
+
+/* ----- Save the order, email the café, show the bill ----- */
+function placeOrder() {
+  const t = totals(CO.mode), lines = billLines(), c = COUNTRIES[CO.ci], drinks = cart.filter(i => PRODUCTS.find(p => p.id === i.id).sizes).reduce((s, i) => s + i.qty, 0);
+  const payNote = CO.pay === 'Card' ? 'Card ending ' + CO.last4 : CO.pay === 'UPI' ? 'UPI (QR)' : CO.mode === 'pickup' ? 'Pay at counter' : 'Cash on delivery';
+  const order = {id:'NB' + Math.floor(1000 + Math.random() * 9000), ts:Date.now(), mode:CO.mode, pay:CO.pay, payNote, paid:CO.pay !== 'Cash', total:t.total, items:lines, bill:t, customer:{name:CO.name, email:CO.email, phone:c[1] + ' ' + CO.phone, addr:CO.addr}};
+  store.set('nb-orders', [order, ...store.get('nb-orders', [])].slice(0, 10));
+  sendMail('order', {order:{id:order.id, mode:order.mode, pay:order.pay, payNote, paid:order.paid, total:t.total, items:lines, bill:t}, customer:{name:CO.name, email:CO.email, dial:c[1], phone:CO.phone, addr:CO.addr}});
+  const r = rewards(), earned = Math.floor(t.sub / 10); saveRewards({points:r.points + earned, stamps:Math.min(12, r.stamps + drinks), coupon:Math.max(0, r.coupon - t.disc)});
+  cart = []; promo = ''; store.set('nb-promo', ''); saveCart(); renderTrack(order.id); coBill(order, earned);
+}
+
+/* ----- Step 3: the bill (also opened later from "View bill" in Track) ----- */
+function billBody(o) {
+  const c = o.customer || {}, due = !o.paid;
+  return `<div class="bmeta"><div><b>Order</b>${esc(o.id)}</div><div><b>Date</b>${fmtDate(o.ts)}</div><div><b>Customer</b>${esc(c.name)}</div><div><b>Phone</b>${esc(c.phone)}</div><div><b>Email</b>${esc(c.email)}</div><div><b>Type</b>${o.mode === 'pickup' ? 'Pickup' : 'Delivery'}</div>${o.mode === 'delivery' && c.addr ? `<div style="grid-column:1/-1"><b>Address</b>${esc(c.addr)}</div>` : ''}<div><b>Payment</b>${esc(o.payNote || o.pay)}</div><div><b>Status</b><span class="bstat${due ? ' due' : ''}">${due ? (o.mode === 'pickup' ? 'Due at counter' : 'Due on delivery') : 'Paid (sample)'}</span></div></div>${summaryHtml(o.items, o.bill, 'Items')}`;
+}
+function coBill(o, earned) {
+  const fresh = earned !== undefined;
+  setModal(`<div class="co bill">${fresh ? stepBar(3) + '<div class="okmark" aria-hidden="true">✓</div>' : ''}<h3 style="font-size:1.6rem">${fresh ? 'Order confirmed' : 'Your bill'}</h3>${fresh ? `<p class="center">Thank you, ${esc((o.customer.name || '').split(' ')[0])}! ${earned ? 'You earned ' + earned + ' sample points.' : ''}</p>` : ''}${billBody(o)}
+  <div class="co-act"><button class="btn line" id="bPrint">Print / Save PDF</button><button class="btn gold" id="goTrack">Track order</button></div></div>`);
+  $('#bPrint').onclick = () => printBill(o);
+  $('#goTrack').onclick = () => { modal.close(); $('#track').scrollIntoView(); };
+}
+function printBill(o) {
+  const w = window.open('', '_blank', 'width=760,height=900'); if (!w) { toast('Allow pop-ups to print the bill'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Bill ${esc(o.id)} - NOIR &amp; BEAN</title><style>body{font-family:Arial,sans-serif;color:#201510;max-width:640px;margin:24px auto;padding:0 16px}h1{font-size:22px;letter-spacing:.12em;margin:0}h2{font-size:15px;font-weight:normal;color:#85776c;margin:2px 0 18px}.bmeta{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px;margin-bottom:16px}.bmeta b{display:block;color:#85776c;font-weight:normal;font-size:11px;text-transform:uppercase}.bstat{padding:1px 8px;border-radius:99px;background:#e6f4ea;color:#1e6b34;font-size:12px}.due{background:#fff3d6;color:#8a5a00}.osum h4{margin:0 0 8px;font-size:15px}.osum ul{list-style:none;padding:0;margin:0 0 10px}.osum li{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-bottom:1px solid #eee;font-size:13px}.osum small{display:block;color:#85776c}.osum .rows div{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}.osum .rows .tot{border-top:2px solid #201510;margin-top:6px;padding-top:6px;font-weight:bold;font-size:16px}.foot{margin-top:24px;font-size:12px;color:#85776c;text-align:center}</style></head><body><h1>NOIR &amp; BEAN</h1><h2>Order bill / receipt (sample)</h2>${billBody(o)}<p class="foot">Thank you for your order. This is a sample bill from a demo website.</p></body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => w.print(), 350);
 }
 let shownPts = 0, shownStamps = 0;
 function countTo(el, from, to) { if (from === to) { el.textContent = to; return; } const t0 = performance.now(); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
@@ -215,8 +312,9 @@ function renderTrack(id) {
   if (!o) { out.dataset.sig = ''; out.innerHTML = trackId ? `<div class="empty"><h3>Order not found</h3><p>Check the order ID and try again.</p></div>` : `<div class="empty"><h3>No orders yet</h3><p>Place a demo order from the menu and track it here.</p></div>`; return; }
   const st = Math.min(3, Math.floor((Date.now() - o.ts) / 7000)), sig = o.id + st; if (out.dataset.sig === sig) return; out.dataset.sig = sig;
   const labels = ['Received', 'Brewing', 'Ready', o.mode === 'pickup' ? 'Picked up' : 'Delivered'];
-  out.innerHTML = `<div class="trk"><div class="row"><h3>Order ${o.id}</h3><span class="tag" style="position:static">${o.mode === 'pickup' ? 'Pickup' : 'Delivery'} · ${esc(o.pay)} (demo)</span></div><p class="small2">${o.items.map(i => i.q + '× ' + esc(i.n)).join(', ')} · ${rupee(o.total)}</p><ol class="stages" style="--p:${st / 3 * 100}%">${labels.map((l, k) => `<li class="${k <= st ? 'done' : ''}${k === st ? ' cur' : ''}"><i></i>${l}</li>`).join('')}</ol><p class="small2">${st < 3 ? 'Demo status updates automatically.' : 'Enjoy! This was a demo order.'}</p></div>`;
+  out.innerHTML = `<div class="trk"><div class="row"><h3>Order ${o.id}</h3><span class="tag" style="position:static">${o.mode === 'pickup' ? 'Pickup' : 'Delivery'} · ${esc(o.pay)} (demo)</span></div><p class="small2">${o.items.map(i => i.q + '× ' + esc(i.n)).join(', ')} · ${rupee(o.total)}</p><ol class="stages" style="--p:${st / 3 * 100}%">${labels.map((l, k) => `<li class="${k <= st ? 'done' : ''}${k === st ? ' cur' : ''}"><i></i>${l}</li>`).join('')}</ol><p class="small2">${st < 3 ? 'Demo status updates automatically.' : 'Enjoy! This was a demo order.'}</p>${o.bill ? `<button class="btn line" data-bill="${esc(o.id)}">View bill</button>` : ''}</div>`;
 }
+$('#trackOut').addEventListener('click', e => { const b = e.target.closest('[data-bill]'); if (b) { const o = store.get('nb-orders', []).find(x => x.id === b.dataset.bill); if (o) coBill(o); } });
 $('#trackF').addEventListener('submit', e => { e.preventDefault(); $('#trackOut').dataset.sig = ''; renderTrack($('#trackIn').value.trim().toUpperCase()); });
 setInterval(() => { if (!document.hidden) renderTrack(); }, 1000);
 renderRewards(); renderTrack();
